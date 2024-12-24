@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as Sharing from 'expo-sharing';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>("front");
@@ -19,6 +20,15 @@ export default function App() {
   const [time, setTime] = useState(0);
   const CanRef = useRef<null | any>(null);
 
+  async function changeScreenOrientation() {
+    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+  }
+
+  async function deviceOrientation() {
+    const status = await ScreenOrientation.getPlatformOrientationLockAsync();
+    console.log(status);
+  }
+
   useEffect(() => {
     requestPermission();
     requestMicPermission();
@@ -28,6 +38,9 @@ export default function App() {
       }, 1000);
       return () => clearInterval(interval);
     }
+    // changeScreenOrientation();
+    deviceOrientation();
+
   }, [recording, requestPermission, requestMicPermission]);
 
   if (!permission || !micPermission) {
@@ -99,6 +112,8 @@ export default function App() {
         facing={facing}
         mode={"video"}
         ref={CanRef}
+        ratio="16:9"
+        videoQuality="1080p"
       >
         <View style={styles.buttonContainer}>
         <TouchableOpacity 

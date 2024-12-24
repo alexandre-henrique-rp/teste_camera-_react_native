@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "requireFullScreen": true
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +32,18 @@
           "cameraPermission": "Permitir que $(PRODUCT_NAME) acesse sua câmera",
           "microphonePermission": "Permitir que $(PRODUCT_NAME) acesse seu microfone",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Permitir que $(PRODUCT_NAME) acesse a rotação de tela."
         }
       ]
     ]
