@@ -4,43 +4,37 @@ import {
   useCameraPermissions,
   useMicrophonePermissions
 } from "expo-camera";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import * as Sharing from 'expo-sharing';
-import * as ScreenOrientation from 'expo-screen-orientation';
+import * as Sharing from "expo-sharing";
+import * as ScreenOrientation from "expo-screen-orientation";
 
-export default function App() {
+type CameraComponentProps = {
+  OrientationStatus: number;
+};
+
+export default function CameraComponent({
+  OrientationStatus
+}: CameraComponentProps) {
   const [facing, setFacing] = useState<CameraType>("front");
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [recording, setRecording] = useState(false);
+  const [statusVideo, setStatusVideo] = useState(0);
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [time, setTime] = useState(0);
+  const Duration = 15;
+  const [time, setTime] = useState(Duration);
   const CanRef = useRef<null | any>(null);
-
-  async function changeScreenOrientation() {
-    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  }
-
-  async function deviceOrientation() {
-    const status = await ScreenOrientation.getPlatformOrientationLockAsync();
-    console.log(status);
-  }
-
   useEffect(() => {
     requestPermission();
     requestMicPermission();
     if (recording) {
       const interval = setInterval(() => {
-        setTime((time) => time + 1);
+        setTime((time) => time - 1);
       }, 1000);
       return () => clearInterval(interval);
     }
-    // changeScreenOrientation();
-    deviceOrientation();
-
   }, [recording, requestPermission, requestMicPermission]);
 
   if (!permission || !micPermission) {
@@ -56,13 +50,16 @@ export default function App() {
     setRecording(true);
     try {
       const video = await CanRef.current.recordAsync({
-        maxDuration: 15
+        maxDuration: Duration
       });
       setRecording(false);
       setTime(0);
       console.log("Video captured", video);
       // salvar video em algum lugar
       setVideoUri(video.uri);
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
+      );
     } catch (error) {
       console.error("Error recording video:", error);
     }
@@ -87,16 +84,19 @@ export default function App() {
 
     try {
       const isAvailable = await Sharing.isAvailableAsync();
-      
+
       if (!isAvailable) {
-        Alert.alert("Erro", "Compartilhamento não está disponível neste dispositivo");
+        Alert.alert(
+          "Erro",
+          "Compartilhamento não está disponível neste dispositivo"
+        );
         return;
       }
 
       await Sharing.shareAsync(videoUri, {
-        mimeType: 'video/mp4',
-        dialogTitle: 'Compartilhar vídeo',
-        UTI: 'public.movie'  // necessário para iOS
+        mimeType: "video/mp4",
+        dialogTitle: "Compartilhar vídeo",
+        UTI: "public.movie" // necessário para iOS
       });
     } catch (error) {
       console.error("Error sharing video:", error);
@@ -105,28 +105,41 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar hidden />
-      <CameraView
-        style={styles.camera}
-        facing={facing}
-        mode={"video"}
-        ref={CanRef}
-        ratio="16:9"
-        videoQuality="1080p"
-      >
-        <View style={styles.buttonContainer}>
-        <TouchableOpacity 
+    <CameraView
+      style={styles.camera}
+      facing={facing}
+      mode={"video"}
+      ref={CanRef}
+      ratio="16:9"
+      videoQuality="1080p"
+    >
+      <View style={styles.buttonContainer}>
+        {videoUri ? (
+          <TouchableOpacity
             style={styles.button2}
             onPress={shareVideo}
             disabled={!videoUri}
           >
-            <FontAwesome 
-              name="share" 
-              size={30} 
-              color={videoUri ? "white" : "gray"} 
+            <FontAwesome
+              name="share"
+              size={30}
+              color={videoUri ? "white" : "gray"}
             />
           </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.button2}
+            onPress={shareVideo}
+            disabled={!videoUri}
+          >
+            <FontAwesome
+              name="share"
+              size={30}
+              color={videoUri ? "white" : "gray"}
+            />
+          </TouchableOpacity>
+        )}
+        {OrientationStatus == 1 || OrientationStatus === 2 ? (
           <TouchableOpacity
             style={styles.buttonCapture}
             onPress={recording ? stopCapture : startCapture}
@@ -136,20 +149,18 @@ export default function App() {
               <Text style={{ color: "white", fontSize: 20 }}>{time}</Text>
             ) : null}
           </TouchableOpacity>
+        ) : null}
+        {OrientationStatus == 1 || OrientationStatus === 2 ? (
           <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
             <FontAwesome name="refresh" size={30} color="white" />
           </TouchableOpacity>
-        </View>
-      </CameraView>
-    </View>
+        ) : null}
+      </View>
+    </CameraView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center"
-  },
   camera: {
     flex: 1
   },
@@ -157,7 +168,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     backgroundColor: "transparent",
-    margin: 64
+    margin: 5
   },
   buttonCapture: {
     flex: 1,
